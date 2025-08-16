@@ -11,21 +11,23 @@ import { AIChatRoom } from '../components/AIChatRoom';
 const MainPage = () => {
     const router = useRouter();
     const [walletKey, setWalletKey] = useState('');
-    const [pseudonym, setPseudonym] = useState(''); // State baru untuk pseudonim
+    const [pseudonym, setPseudonym] = useState('');
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
-    const [selectedBookId, setSelectedBookId] = useState<number | null>(BOOKS[1].id);
+    // PASTIKAN INI ADALAH null
+    const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
 
     useEffect(() => {
         const key = localStorage.getItem('walletKey');
-        const alias = localStorage.getItem('pseudonym'); // Ambil pseudonim
+        const alias = localStorage.getItem('pseudonym');
         if (!key) {
             router.push('/login');
         } else {
             setWalletKey(key);
-            setPseudonym(alias || 'Guest'); // Set pseudonim
+            setPseudonym(alias || 'Guest');
         }
     }, [router]);
 
+    // Ini sudah benar
     const selectedBook = BOOKS.find(book => book.id === selectedBookId) || null;
 
     if (!walletKey) {
@@ -46,11 +48,22 @@ const MainPage = () => {
                 <div className={`flex-1 pl-4 pt-4 transition-all duration-300 overflow-hidden ${isSidebarExpanded ? 'md:ml-0' : 'md:ml-0'}`}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
                         <div className="md:col-span-2 bg-putih-bg rounded-sm shadow-md overflow-hidden">
-                            <BookContent book={selectedBook} />
+                            {selectedBook ? (
+                                <BookContent book={selectedBook} />
+                            ) : (
+                                <div className="flex items-center justify-center h-full p-8 text-center text-gray-500">
+                                    <p className="text-xl">Silakan pilih buku dari sidebar untuk melihat kontennya.</p>
+                                </div>
+                            )}
                         </div>
                         <div className="md:col-span-1 bg-putih-bg rounded-sm shadow-md overflow-hidden">
-                            {/* Teruskan pseudonim ke AIChatRoom */}
-                            <AIChatRoom pseudonym={pseudonym} book={selectedBook} />
+                            {selectedBook ? (
+                                <AIChatRoom pseudonym={pseudonym} book={selectedBook} />
+                            ) : (
+                                <div className="flex items-center justify-center h-full p-8 text-center text-gray-500">
+                                    <p className="text-xl">Pilih buku untuk memulai percakapan dengan AI.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

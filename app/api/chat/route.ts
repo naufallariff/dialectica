@@ -1,4 +1,3 @@
-// app/api/chat/route.ts
 import { NextResponse } from 'next/server';
 import Replicate from 'replicate';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -25,13 +24,13 @@ export async function POST(req: Request) {
         let stream: any;
         const systemPrompt = "Anda adalah asisten AI yang ramah, sopan, dan sangat menguasai bahasa Indonesia. Anda akan menjawab pertanyaan berdasarkan konten buku yang diberikan. Jika pertanyaan di luar konteks buku, beri tahu pengguna bahwa Anda hanya dapat menjawab pertanyaan terkait buku ini. ";
 
-        // Konteks buku dan riwayat chat
-        const context = bookContent ? `Berikut adalah isi buku yang Anda miliki:\n\n---\n${bookContent}\n---\n` : '';
-        const formattedChatHistory = chatHistory.map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.text}`).join('\n') + '\n\n';
-
-        const fullPrompt = `${systemPrompt}\n\n${context}\n${formattedChatHistory}User: ${prompt}\n\nAssistant:`;
-
         if (model.includes('ibm-granite')) {
+            // Gabungkan konten buku, riwayat chat, dan prompt baru ke dalam satu string
+            const context = bookContent ? `Berikut adalah isi buku yang Anda miliki:\n\n---\n${bookContent}\n---\n` : '';
+            const formattedChatHistory = chatHistory.map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.text}`).join('\n');
+
+            const fullPrompt = `${systemPrompt}\n\n${context}\n${formattedChatHistory}\nUser: ${prompt}\n\nAssistant:`;
+
             stream = await replicate.stream(model, { input: { prompt: fullPrompt } });
             return new NextResponse(
                 new ReadableStream({
@@ -50,7 +49,7 @@ export async function POST(req: Request) {
                     { role: "user", parts: [{ text: systemPrompt }] },
                     { role: "user", parts: [{ text: `Isi Buku:\n${bookContent}` }] },
                     ...chatHistory.map((msg: any) => ({
-                        role: msg.role === 'user' ? 'user' : 'model', // Gemini menggunakan 'model' untuk asisten
+                        role: msg.role === 'user' ? 'user' : 'model',
                         parts: [{ text: msg.text }]
                     })),
                     { role: "user", parts: [{ text: prompt }] }

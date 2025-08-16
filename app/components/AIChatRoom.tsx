@@ -28,14 +28,25 @@ export const AIChatRoom = ({ pseudonym, book }: AIChatRoomProps) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Efek untuk mereset chat saat buku berubah
+    // ✅ EFEK PERTAMA: Bertugas untuk memuat riwayat saat buku berubah.
     useEffect(() => {
-        // Reset riwayat chat ketika buku berubah
-        setMessages([]);
+        if (book) {
+            const storedMessages = localStorage.getItem(`chat_history_${book.id}`);
+            if (storedMessages) {
+                setMessages(JSON.parse(storedMessages));
+            } else {
+                setMessages([]);
+            }
+        } else {
+            setMessages([]);
+        }
     }, [book]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        // ✅ Tambahkan pemeriksaan eksplisit
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
     }, [messages]);
 
     useEffect(() => {
@@ -66,12 +77,10 @@ export const AIChatRoom = ({ pseudonym, book }: AIChatRoomProps) => {
         console.log(`   - Pesan Asli: "${userMessage}"`);
         console.log(`   - Pesan Terenkripsi (konsep): "${encryptedUserMessage}"`);
 
-        // Tambahkan pesan pengguna ke riwayat untuk dikirim ke API
         const chatHistory = newMessages.map(msg => ({
             role: msg.isAI ? 'assistant' : 'user',
             text: msg.text
         }));
-
 
         try {
             const response = await fetch('/api/chat', {
@@ -82,8 +91,8 @@ export const AIChatRoom = ({ pseudonym, book }: AIChatRoomProps) => {
                 body: JSON.stringify({
                     model: model,
                     prompt: userMessage,
-                    bookContent: book?.content, // Kirim konten buku
-                    chatHistory: chatHistory // Kirim riwayat percakapan
+                    bookContent: messages.length === 0 ? book?.content : '',
+                    chatHistory: chatHistory
                 }),
             });
 
@@ -111,13 +120,12 @@ export const AIChatRoom = ({ pseudonym, book }: AIChatRoomProps) => {
                 });
             }
 
-            // Tambahkan respons AI ke riwayat chat
-            setMessages(prev => {
-                const updatedMessages = [...prev];
-                updatedMessages[currentMessageIndex + 1].text = responseText;
-                updatedMessages[currentMessageIndex + 1].isAI = true;
-                return updatedMessages;
-            });
+            // ✅ Perbaikan: Simpan riwayat chat yang lengkap di sini, setelah mendapatkan respons.
+            const finalMessages = [...newMessages, { text: responseText, isAI: true }];
+            setMessages(finalMessages);
+            if (book) {
+                localStorage.setItem(`chat_history_${book.id}`, JSON.stringify(finalMessages));
+            }
 
             console.log("SIMULASI DEKRIPSI: Respons AI diterima dan didekripsi.");
             console.log(`   - Respons Asli: "${responseText}"`);
@@ -129,6 +137,11 @@ export const AIChatRoom = ({ pseudonym, book }: AIChatRoomProps) => {
                 newMessages[currentMessageIndex + 1].text = "Maaf, terjadi kesalahan saat menghubungi AI.";
                 return newMessages;
             });
+            // ✅ Simpan pesan error juga
+            if (book) {
+                localStorage.setItem(`chat_history_${book.id}`, JSON.stringify([...newMessages, { text: "Maaf, terjadi kesalahan saat menghubungi AI.", isAI: true }]));
+            }
+
         } finally {
             setIsLoading(false);
         }
@@ -136,20 +149,25 @@ export const AIChatRoom = ({ pseudonym, book }: AIChatRoomProps) => {
 
     return (
         <div className="flex flex-col h-full bg-putih-bg rounded-sm border-2 border-gray-200">
-            <div className="p-4 border-b-2 shadow-sm bg-biru-muda-1 relative cursor-pointer"
-                onClick={() => setShowDropdown(!showDropdown)} ref={dropdownRef}>
+            <div
+                className="p-4 border-b-2 shadow-sm bg-biru-muda-1 relative cursor-pointer"
+                onClick={() => setShowDropdown(!showDropdown)}
+                ref={dropdownRef}
+            >
                 <div className="flex items-center justify-between">
-                    <div className="text-md font-medium text-black">
-                        {model}
-                    </div>
-                    <BsChevronDown className={`transition-transform ${showDropdown ? 'transform rotate-180' : ''}`} />
+                    <div className="text-md font-medium text-black">{model}</div>
+                    <BsChevronDown
+                        className={`transition-transform ${showDropdown ? "transform rotate-180" : ""
+                            }`}
+                    />
                 </div>
                 {showDropdown && (
                     <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-sm shadow-md z-10 mt-1">
                         {models.map((m) => (
                             <div
                                 key={m}
-                                className={`p-2 text-sm hover:bg-gray-100 cursor-pointer ${model === m ? 'bg-gray-100 font-medium' : ''}`}
+                                className={`p-2 text-sm hover:bg-gray-100 cursor-pointer ${model === m ? "bg-gray-100 font-medium" : ""
+                                    }`}
                                 onClick={() => {
                                     setModel(m);
                                     setShowDropdown(false);
@@ -163,7 +181,10 @@ export const AIChatRoom = ({ pseudonym, book }: AIChatRoomProps) => {
             </div>
             <div className="flex-1 p-5 overflow-y-auto space-y-4">
                 {messages.map((msg, index) => (
-                    <div key={index} className={`flex ${msg.isAI ? 'justify-start' : 'justify-end'}`}>
+                    <div
+                        key={index}
+                        className={`flex ${msg.isAI ? "justify-start" : "justify-end"}`}
+                    >
                         {msg.isAI ? (
                             <div className="text-sm text-black whitespace-pre-line">
                                 {msg.text}
@@ -189,16 +210,36 @@ export const AIChatRoom = ({ pseudonym, book }: AIChatRoomProps) => {
                         className="flex-1 bg-transparent p-1 focus:outline-none text-sm border-none"
                         placeholder="Ask for discussions..."
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === "Enter") {
                                 handleSendMessage();
                             }
                         }}
                     />
-                    <button onClick={handleSendMessage} disabled={isLoading} className="text-gray-800 hover:text-gray-900 disabled:opacity-50">
+                    <button
+                        onClick={handleSendMessage}
+                        disabled={isLoading}
+                        className="text-gray-800 hover:text-gray-900 disabled:opacity-50"
+                    >
                         {isLoading ? (
-                            <svg className="animate-spin h-5 w-5 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg
+                                className="animate-spin h-5 w-5 text-gray-800"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                ></circle>
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
                             </svg>
                         ) : (
                             <MdSend size={20} />

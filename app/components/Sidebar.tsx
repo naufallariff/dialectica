@@ -32,18 +32,18 @@ export const Sidebar = ({ books, selectedBookId, onBookSelect, isExpanded, toggl
 
             {/* Daftar buku */}
             <div className={isExpanded ? 'block' : 'hidden'}>
-                <ul className="space-y-0"> {/* Menghilangkan spacing antar item */}
+                <ul className="space-y-0">
                     {books.map(book => (
                         <li key={book.id} className="mx-0">
                             <button
                                 onClick={() => onBookSelect(book.id)}
                                 className={`
-                                        w-full text-left p-4 transition-colors
-                                        ${selectedBookId === book.id
+                                    w-full text-left p-4 transition-colors
+                                    ${selectedBookId === book.id
                                         ? 'bg-biru-muda-1 text-black'
                                         : 'hover:bg-gray-100'}
-                                        border-b border-gray-200 last:border-b-0
-                                    `}
+                                    border-b border-gray-200 last:border-b-0
+                                `}
                             >
                                 <span className="text-sm font-normal text-black block">{book.title}</span>
                                 {book.subtitle && (
