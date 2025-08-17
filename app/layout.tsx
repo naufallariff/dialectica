@@ -5,7 +5,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Dialectica App',
-  description: 'Web diskusi buku dengan AI',
+  description: 'Discuss yout reading with AI',
 };
 
 export default function RootLayout({

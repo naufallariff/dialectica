@@ -11,8 +11,8 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div className="flex items-center justify-center h-screen bg-biru-muda-2">
-      <p className="text-xl font-semibold text-gray-700">Redirecting to login...</p>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-ungu-primary to-biru-muda-2 relative">
+      <p className="text-xl font-semibold text-black animate-bounce">Loading . . .</p>
     </div>
   );
 }

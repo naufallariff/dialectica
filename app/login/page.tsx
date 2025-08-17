@@ -43,7 +43,7 @@ const LoginPage = () => {
 
             <div className="bg-putih-bg p-12 rounded-2xl shadow-custom text-center">
                 <h1 className="text-4xl font-bold">Dialectica</h1>
-                <p className="mt-2 text-lg text-gray-600">Sign With Ethereum or Solana</p>
+                <p className="mt-2 text-lg text-black">Sign With Ethereum or Solana</p>
                 <button
                     onClick={handleConnectWallet}
                     className="mt-8 bg-ungu-primary text-white font-semibold py-3 px-8 rounded-xl shadow-md hover:bg-ungu-primary/80 transition-colors"
