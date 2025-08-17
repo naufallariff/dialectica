@@ -35,8 +35,9 @@ export async function POST(req: Request) {
             return new NextResponse(
                 new ReadableStream({
                     async start(controller) {
+                        const encoder = new TextEncoder();
                         for await (const chunk of stream) {
-                            controller.enqueue(chunk.toString());
+                            controller.enqueue(encoder.encode(chunk.toString()));
                         }
                         controller.close();
                     },
@@ -58,13 +59,15 @@ export async function POST(req: Request) {
 
             const readableStream = new ReadableStream({
                 async start(controller) {
+                    const encoder = new TextEncoder();
                     for await (const chunk of result.stream) {
-                        controller.enqueue(chunk.text());
+                        controller.enqueue(encoder.encode(chunk.text()));
                     }
                     controller.close();
                 }
             });
             return new NextResponse(readableStream);
+
 
         } else {
             return NextResponse.json({ error: 'Model not supported' }, { status: 400 });
